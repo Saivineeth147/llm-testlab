@@ -1,6 +1,0 @@
-{
-    "question": "Rome is the capital of Italy?",
-    "generated_answer": "Yes, Rome is the capital of Italy.",
-    "hallucination_best_match": "Rome is the capital of Italy",
-    "hallucination_distance": 0.9200385212898254
-}

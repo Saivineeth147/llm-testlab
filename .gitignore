@@ -1,23 +1,42 @@
-# Python
+# Byte-compiled / cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.pdb
-*.egg
-*.egg-info/
-dist/
-build/
-*.log
+*.py[cod]
+*.so
 
-# Virtual environment
+# Virtual environments
+.venv/
 venv/
 env/
-.venv/
+*.env
 
-# Jupyter
-.ipynb_checkpoints/
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# OS
-.DS_Store
-Thumbs.db
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# IDE / editor settings
+.vscode/
+.idea/
+*.swp
+
+# Logs / test
+*.log
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
