@@ -20,7 +20,7 @@ Features
 
 Project Structure
 -----------------
-
+```
 llm-testlab/
 |
 ├─ llm_testing_suite.py      # Main LLM testing suite
@@ -28,7 +28,7 @@ llm-testlab/
 ├─ requirements.txt          # Python dependencies
 ├─ README.md                 # GitHub README
 └─ .gitignore                # Ignore virtualenv and cache files
-
+```
 Installation
 ------------
 
