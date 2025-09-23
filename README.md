@@ -20,7 +20,7 @@ Features
 
 Project Structure
 -----------------
-
+```
 llm-testlab/
 |
 ├─ llm_testing_suite.py      # Main LLM testing suite
@@ -28,13 +28,13 @@ llm-testlab/
 ├─ requirements.txt          # Python dependencies
 ├─ README.md                 # GitHub README
 └─ .gitignore                # Ignore virtualenv and cache files
-
+```
 Installation
 ------------
 
 1. Clone the repository:
 
-    git clone git@github.com:YOUR_USERNAME/llm-testlab.git
+    git clone git@github.com:Saivineeth147/llm-testlab.git
     cd llm-testlab
 
 2. Create and activate a virtual environment:
