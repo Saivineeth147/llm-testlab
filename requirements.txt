@@ -1,0 +1,6 @@
+numpy==2.3.3
+sentence-transformers==5.1.1
+rich
+faiss-cpu  # Optional, remove if not using FAISS
+transformers==4.56.2 # Optional, if using hugging face
+huggingface_hub==0.35.0 #Optional, if using hugging face
