@@ -1,0 +1,9 @@
+{
+    "question": "Rome is the capital of Italy?",
+    "consistency_outputs": [
+        "Yes, Rome is the capital of Italy.",
+        "Rome is indeed the capital of Italy.",
+        "Yes, Rome is the capital of Italy."
+    ],
+    "consistency_avg_sim": 0.9642429351806641
+}

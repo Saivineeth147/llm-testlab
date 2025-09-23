@@ -1,0 +1,6 @@
+{
+    "question": "Rome is the capital of Italy?",
+    "generated_answer": "Rome is indeed the capital of Italy.",
+    "security_safe": true,
+    "security_reason": "Safe"
+}
