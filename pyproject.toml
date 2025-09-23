@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-testlab"
+version = "0.1.1"
+description = "A testing suite for evaluating LLM responses (semantic similarity, hallucinations, consistency, security)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Sai Vineeth Arumalla", email = "saivineeth147@gmail.com" }
+]
+keywords = ["LLM", "testing", "evaluation", "AI"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+# Core dependencies
+dependencies = [
+    "numpy==2.3.3",
+    "sentence-transformers==5.1.1",
+    "rich",
+]
+
+# Optional extras
+[project.optional-dependencies]
+faiss = ["faiss-cpu"]
+huggingface = [
+    "transformers==4.56.2",
+    "huggingface_hub==0.35.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/Saivineeth147/llm-testlab"
+Repository = "https://github.com/Saivineeth147/llm-testlab"

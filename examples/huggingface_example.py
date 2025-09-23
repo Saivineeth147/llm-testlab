@@ -32,7 +32,7 @@ def hf_llm(prompt: str) -> str:
 
 # Example with your test suite
 suite = LLMTestSuite(hf_llm)
-print("Using FAISS:", suite .use_faiss)
+print("Using FAISS:", suite.use_faiss)
 suite.add_knowledge("Rome is the capital of Italy")
 suite.list_knowledge()
 result = suite.run_tests(
