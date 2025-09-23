@@ -34,7 +34,7 @@ Installation
 
 1. Clone the repository:
 
-    git clone git@github.com:YOUR_USERNAME/llm-testlab.git
+    git clone git@github.com:Saivineeth147/llm-testlab.git
     cd llm-testlab
 
 2. Create and activate a virtual environment:
