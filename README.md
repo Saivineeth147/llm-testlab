@@ -22,35 +22,33 @@ Project Structure
 -----------------
 ```
 llm-testlab/
-|
-├─ llm_testing_suite.py      # Main LLM testing suite
-├─ huggingface_example.py    # Example usage / tests
-├─ requirements.txt          # Python dependencies
-├─ README.md                 # GitHub README
-└─ .gitignore                # Ignore virtualenv and cache files
+├── llm_testing_suite/
+│   ├── __init__.py          
+│   └── llm_testing_suite.py
+├── pyproject.toml
+├── README.md
+├── LICENSE
+└── examples/
+    └── huggingface_example.py
+
 ```
 Installation
 ------------
 
-1. Clone the repository:
+1. From PyPI:
 
-    git clone git@github.com:Saivineeth147/llm-testlab.git
-    cd llm-testlab
+    `pip install llm-testlab`
 
-2. Create and activate a virtual environment:
+2. Or install directly from source:
+  ```
+   git clone https://github.com/Saivineeth147/llm-testlab.git
+   cd llm-testlab
+   pip install .
+```
 
-    python -m venv venv
-    source venv/bin/activate   # macOS / Linux
-    venv\Scripts\activate      # Windows
+Optional: If you want FAISS and huggingface:
 
-3. Install dependencies:
-
-    pip install -r requirements.txt
-
-Optional: If you want FAISS support for faster similarity searches:
-
-    pip install faiss-cpu    # macOS / Linux
-    pip install faiss-windows # Windows
+  ` pip install llm-testlab[faiss,huggingface] `
 
 Quick Start
 -----------
