@@ -1,3 +1,13 @@
+<p align="center">
+  <a href="https://github.com/Saivineeth147/llm-testlab/stargazers">
+    <img src="https://img.shields.io/github/stars/Saivineeth147/llm-testlab?style=social" alt="Star this repo" />
+  </a>
+</p>
+
+⭐ If you find this project useful, **please consider starring** it — it helps others discover it!
+
+
+
 LLM TestLab
 ============
 
