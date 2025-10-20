@@ -26,6 +26,23 @@ var/
 .installed.cfg
 *.egg
 
+# Paper and examples
+paper/
+*.json
+
+# Test result files (generated during evaluation runs)
+code_eval_output.txt
+text_eval_output.txt
+code_evaluation_results.json
+comprehensive_evaluation_results.json
+groq_code_evaluation_results.json
+*_results.json
+*_evaluation_results.json
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
 
@@ -33,6 +50,7 @@ var/
 .vscode/
 .idea/
 *.swp
+*.swo
 
 # Logs / test
 *.log
@@ -40,3 +58,8 @@ var/
 htmlcov/
 .tox/
 .pytest_cache/
+
+# Temporary files
+*.tmp
+*.bak
+*~

@@ -4,19 +4,39 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-testlab"
-version = "0.1.1"
-description = "A testing suite for evaluating LLM responses (semantic similarity, hallucinations, consistency, security)."
+version = "0.2.0"
+description = "Comprehensive testing suite for LLM evaluation: hallucination detection, consistency, robustness, safety, and multi-language code generation assessment."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
 authors = [
     { name = "Sai Vineeth Arumalla", email = "saivineeth147@gmail.com" }
 ]
-keywords = ["LLM", "testing", "evaluation", "AI"]
+keywords = [
+    "LLM",
+    "testing",
+    "evaluation",
+    "AI",
+    "hallucination-detection",
+    "code-evaluation",
+    "semantic-similarity",
+    "NLP",
+    "machine-learning"
+]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Quality Assurance",
 ]
 
 # Core dependencies
@@ -33,7 +53,20 @@ huggingface = [
     "transformers==4.56.2",
     "huggingface_hub==0.35.0"
 ]
+all = [
+    "faiss-cpu",
+    "transformers==4.56.2",
+    "huggingface_hub==0.35.0"
+]
 
 [project.urls]
 Homepage = "https://github.com/Saivineeth147/llm-testlab"
 Repository = "https://github.com/Saivineeth147/llm-testlab"
+Documentation = "https://github.com/Saivineeth147/llm-testlab#readme"
+"Bug Tracker" = "https://github.com/Saivineeth147/llm-testlab/issues"
+
+[tool.setuptools]
+packages = ["llm_testing_suite"]
+
+[tool.setuptools.package-data]
+llm_testing_suite = ["*.py"]

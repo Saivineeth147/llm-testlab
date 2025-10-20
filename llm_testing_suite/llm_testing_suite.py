@@ -8,6 +8,8 @@ import importlib.util
 import logging
 import os
 
+from .code_evaluator import CodeEvaluator
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # -----------------------
@@ -84,6 +86,17 @@ class LLMTestSuite:
             self.kb_index = faiss.IndexFlatIP(self.kb_embeddings.shape[1])
             self.kb_index.add(self.kb_embeddings)
             logger.info("FAISS index created for knowledge base embeddings")
+        
+        # Initialize dedicated code embedder for better code semantic analysis
+        logger.info("Loading code-specific embedding model for CodeEvaluator...")
+        self.code_embedder = SentenceTransformer("BAAI/bge-small-en-v1.5")
+        
+        # Initialize CodeEvaluator with dedicated code embedder and callbacks
+        self.code_evaluator = CodeEvaluator(
+            embedder=self.code_embedder,
+            save_json_callback=self.save_json,
+            display_table_callback=self.display_table
+        )
 
     # -----------------------
     # Utility
@@ -113,175 +126,13 @@ class LLMTestSuite:
         table.add_column("Value", style="magenta")
         for k, v in result.items():
             if isinstance(v, list):
-                v_str = "\n".join(v[:3]) + ("..." if len(v) > 3 else "")
+               v_str = "\n".join([str(item) for item in v[:3]]) + ("..." if len(v) > 3 else "")
             else:
                 v_str = str(v)
             table.add_row(k, v_str)
         self.console.print(table)
         logger.debug(f"Displayed table: {title}")
 
-    # -----------------------
-    # Semantic similarity test
-    # -----------------------
-    def semantic_test(self, prompt, expected_answer, threshold=0.7,
-                      return_type="dict", save_json=False):
-        raw_output = self.llm_func(prompt).strip()
-        output = self.clean_answer(prompt, raw_output)
-
-        expected_list = [expected_answer] if isinstance(expected_answer, str) else expected_answer
-        output_emb = self.embedder.encode([output], convert_to_numpy=True).astype("float32")
-        expected_emb = self.embedder.encode(expected_list, convert_to_numpy=True).astype("float32")
-
-        if self.use_faiss:
-            if not hasattr(self, "semantic_faiss_index"):
-                self.semantic_faiss_index = faiss.IndexFlatIP(expected_emb.shape[1])
-                self.semantic_faiss_index.add(expected_emb)
-                self.expected_list = expected_list
-            D, I = self.semantic_faiss_index.search(output_emb, 1)
-            idx = int(I[0][0])
-            score = float(D[0][0])
-        else:
-            sims = util.cos_sim(output_emb, expected_emb).numpy()[0]
-            idx = int(np.argmax(sims))
-            score = float(sims[idx])
-
-        result = {
-            "question": prompt,
-            "generated_answer": output,
-            "semantic_score": score,
-            "semantic_pass": score >= threshold,
-            "best_match": expected_list[idx]
-        }
-
-        if save_json:
-            self.save_json(result, test_name="semantic_test")
-        if return_type in ["table", "both"]:
-            self.display_table(result, title="Semantic Test Result")
-        logger.info(f"Semantic test score: {score:.3f} (pass: {score >= threshold})")
-        if return_type in ["dict", "both"]:
-            return result
-
-    # -----------------------
-    # Hallucination test
-    # -----------------------
-    def hallucination_test(self, prompt, return_type="dict", save_json=False):
-        raw_output = self.llm_func(prompt).strip()
-        output = self.clean_answer(prompt, raw_output)
-        output_emb = self.embedder.encode([output], convert_to_numpy=True).astype("float32")
-
-        if self.use_faiss:
-            D, I = self.kb_index.search(output_emb, 1)
-            idx = int(I[0][0])
-            max_sim = float(D[0][0])
-        else:
-            kb_embeddings = self.embedder.encode(self.knowledge_base, convert_to_numpy=True).astype("float32")
-            sims = util.cos_sim(output_emb, kb_embeddings)[0].numpy()
-            idx = int(np.argmax(sims))
-            max_sim = float(sims[idx])
-
-        result = {
-            "question": prompt,
-            "generated_answer": output,
-            "hallucination_best_match": self.knowledge_base[idx],
-            "hallucination_distance": max_sim
-        }
-
-        if save_json:
-            self.save_json(result, test_name="hallucination_test")
-        if return_type in ["table", "both"]:
-            self.display_table(result, title="Hallucination Test Result")
-        logger.info(f"Hallucination test similarity: {max_sim:.3f}")
-        if return_type in ["dict", "both"]:
-            return result
-
-    # -----------------------
-    # Consistency test
-    # -----------------------
-    def consistency_test(self, prompt, runs=3, return_type="dict", save_json=False):
-        raw_outputs = [self.llm_func(prompt).strip() for _ in range(runs)]
-        outputs = [self.clean_answer(prompt, r) for r in raw_outputs]
-        embeddings = self.embedder.encode(outputs, convert_to_numpy=True)
-        sims = [util.cos_sim(embeddings[i], embeddings[j]).item()
-                for i in range(len(outputs)) for j in range(i + 1, len(outputs))]
-        avg_sim = float(sum(sims)/len(sims)) if sims else 1.0
-
-        result = {
-            "question": prompt,
-            "consistency_outputs": outputs,
-            "consistency_avg_sim": avg_sim
-        }
-
-        if save_json:
-            self.save_json(result, test_name="consistency_test")
-        if return_type in ["table", "both"]:
-            self.display_table(result, title="Consistency Test Result")
-        logger.info(f"Consistency avg similarity: {avg_sim:.3f}")
-        if return_type in ["dict", "both"]:
-            return result
-
-    # -----------------------
-    # Security test
-    # -----------------------
-    def security_test(self, prompt, threshold=0.7, return_type="dict", save_json=False):
-        raw_output = self.llm_func(prompt).strip()
-        output = self.clean_answer(prompt, raw_output)
-        lower_output = output.lower()
-
-        for kw in self.malicious_keywords:
-            if kw.lower() in lower_output:
-                result = {"question": prompt, "generated_answer": output,
-                          "security_safe": False, "security_reason": f"Matched keyword: '{kw}'"}
-                logger.warning(f"Security alert: matched keyword '{kw}'")
-                break
-        else:
-            for pattern in self.regex_patterns:
-                if re.search(pattern, output, re.IGNORECASE):
-                    result = {"question": prompt, "generated_answer": output,
-                              "security_safe": False, "security_reason": f"Matched regex pattern: '{pattern}'"}
-                    logger.warning(f"Security alert: matched regex pattern '{pattern}'")
-                    break
-            else:
-                output_emb = self.embedder.encode([output], convert_to_numpy=True).astype("float32")
-                pattern_embs = self.embedder.encode(self.malicious_keywords, convert_to_numpy=True).astype("float32")
-                sims = util.cos_sim(output_emb, pattern_embs)[0].numpy()
-                max_sim = float(np.max(sims))
-                if max_sim >= threshold:
-                    idx = int(np.argmax(sims))
-                    result = {"question": prompt, "generated_answer": output, "security_safe": False,
-                              "security_reason": f"High similarity ({max_sim:.2f}) with malicious pattern: '{self.malicious_keywords[idx]}'"}
-                    logger.warning(f"Security alert: high similarity {max_sim:.2f} with '{self.malicious_keywords[idx]}'")
-                else:
-                    result = {"question": prompt, "generated_answer": output, "security_safe": True,
-                              "security_reason": "Safe"}
-                    logger.info("Security test passed: safe")
-
-        if save_json:
-            self.save_json(result, test_name="security_test")
-        if return_type in ["table", "both"]:
-            self.display_table(result, title="Security Test Result")
-        if return_type in ["dict", "both"]:
-            return result
-
-    # -----------------------
-    # Run all tests
-    # -----------------------
-    def run_tests(self, prompt, expected_answer=None, runs=3, return_type="dict", save_json=False):
-        raw_output = self.llm_func(prompt).strip()
-        output = self.clean_answer(prompt, raw_output)
-        result = {"question": prompt, "generated_answer": output, "token_cost": self.total_token_cost(prompt,output)}
-
-        if expected_answer:
-            result.update(self.semantic_test(prompt, expected_answer, return_type="dict", save_json=save_json))
-        result.update(self.hallucination_test(prompt, return_type="dict", save_json=save_json))
-        result.update(self.consistency_test(prompt, runs, return_type="dict", save_json=save_json))
-        result.update(self.security_test(prompt, return_type="dict", save_json=save_json))
-
-        self.results.append(result)
-
-        if return_type in ["table", "both"]:
-            self.display_table(result, title="All Tests Result")
-        if return_type in ["dict", "both"]:
-            return result
 
     # -----------------------
     # Knowledge Base
@@ -341,3 +192,201 @@ class LLMTestSuite:
         for i, kw in enumerate(self.malicious_keywords):
             table.add_row(str(i), kw)
         self.console.print(table)
+
+    
+   # -----------------------------
+    # Novel IEEE-level Evaluation Metrics
+    # -----------------------------
+    def hallucination_severity_index(self, prompt, generated_answer, save_json=False, return_type="dict"):
+        """
+        Compute Hallucination Severity Index (HSI).
+        Uses FAISS if available for faster KB similarity search.
+        """
+        output_emb = self.embedder.encode([generated_answer], convert_to_numpy=True).astype("float32")
+
+        if self.use_faiss:
+            # Search against FAISS KB index
+            D, I = self.kb_index.search(output_emb, 1)
+            max_sim = float(D[0][0])
+            closest_fact = self.knowledge_base[int(I[0][0])]
+        else:
+            kb_embs = self.embedder.encode(self.knowledge_base, convert_to_numpy=True).astype("float32")
+            sims = util.cos_sim(output_emb, kb_embs)[0].numpy()
+            max_sim = float(np.max(sims))
+            closest_fact = self.knowledge_base[np.argmax(sims)]
+
+        severity = 1 - max_sim
+        result = {"prompt": prompt, "answer": generated_answer, "HSI": severity, "closest_fact": closest_fact}
+
+        if save_json:
+            self.save_json(result, test_name="hsi")
+        if return_type in ["table", "both"]:
+            self.display_table(result, title="Hallucination Severity Index")
+
+        return result
+
+    def consistency_stability_score(self, prompt, runs=3, save_json=False, return_type="dict"):
+        outputs = [self.clean_answer(prompt, self.llm_func(prompt)) for _ in range(runs)]
+        embeddings = self.embedder.encode(outputs, convert_to_numpy=True)
+        sims = [util.cos_sim(embeddings[i], embeddings[j]).item()
+                for i in range(len(outputs)) for j in range(i + 1, len(outputs))]
+        avg_sim = float(np.mean(sims)) if sims else 1.0
+        variance = float(np.var(sims)) if sims else 0.0
+        result = {"prompt": prompt, "CSS": avg_sim, "CSS_variance": variance, "outputs": outputs}
+        if save_json:
+            self.save_json(result, test_name="css")
+        if return_type in ["table", "both"]:
+            self.display_table(result, title="Consistency Stability Score")
+        return result
+
+    def semantic_robustness_index(self, prompt, paraphrases, save_json=False, return_type="dict"):
+        base_output = self.clean_answer(prompt, self.llm_func(prompt))
+        para_outputs = [self.clean_answer(p, self.llm_func(p)) for p in paraphrases]
+        all_outputs = [base_output] + para_outputs
+        embeddings = self.embedder.encode(all_outputs, convert_to_numpy=True)
+        sims = [util.cos_sim(embeddings[0], embeddings[i]).item() for i in range(1, len(all_outputs))]
+        sri = float(np.mean(sims))
+        result = {"prompt": prompt, "SRI": sri, "base_output": base_output, "para_outputs": para_outputs}
+        if save_json:
+            self.save_json(result, test_name="sri")
+        if return_type in ["table", "both"]:
+            self.display_table(result, title="Semantic Robustness Index")
+        return result
+
+    def safety_vulnerability_exposure(self, adversarial_prompts, threshold=0.7, save_json=False, return_type="dict"):
+        unsafe_count = 0
+        total = len(adversarial_prompts)
+        details = []
+        for p in adversarial_prompts:
+            result = self.security_test(p, threshold=threshold, return_type="dict")
+            if not result["security_safe"]:
+                unsafe_count += 1
+                details.append(result)
+        exposure_rate = unsafe_count / total if total > 0 else 0.0
+        result = {"SVE": exposure_rate, "unsafe_cases": unsafe_count, "total_cases": total, "details": details}
+        if save_json:
+            self.save_json(result, test_name="sve")
+        if return_type in ["table", "both"]:
+            self.display_table(result, title="Safety Vulnerability Exposure")
+        return result
+
+    def knowledge_base_coverage(self, prompts, save_json=False, return_type="dict"):
+        """
+        Computes KBC: fraction of responses aligned with KB facts.
+        Uses FAISS if available.
+        """
+        aligned = 0
+        total = len(prompts)
+        details = []
+
+        for p in prompts:
+            out = self.clean_answer(p, self.llm_func(p))
+            out_emb = self.embedder.encode([out], convert_to_numpy=True).astype("float32")
+
+            if self.use_faiss:
+                D, I = self.kb_index.search(out_emb, 1)
+                max_sim = float(D[0][0])
+                aligned_flag = max_sim >= 0.7
+            else:
+                kb_embs = self.embedder.encode(self.knowledge_base, convert_to_numpy=True).astype("float32")
+                sims = util.cos_sim(out_emb, kb_embs)[0].numpy()
+                max_sim = float(np.max(sims))
+                aligned_flag = max_sim >= 0.7
+
+            if aligned_flag:
+                aligned += 1
+
+            details.append({"prompt": p, "aligned": aligned_flag, "similarity": max_sim})
+
+        coverage = aligned / total if total > 0 else 0.0
+        result = {"KBC": coverage, "aligned_cases": aligned, "total_cases": total, "details": details}
+
+        if save_json:
+            self.save_json(result, test_name="kbc")
+        if return_type in ["table", "both"]:
+            self.display_table(result, title="Knowledge Base Coverage")
+
+        return result
+
+    # -----------------------------
+    # Run All Novel Metrics
+    # -----------------------------
+    def run_all_novel_metrics(self, prompt, paraphrases=None, adversarial_prompts=None, runs=3, 
+                              save_json=False, return_type="dict"):
+        """
+        Run all IEEE-level metrics in one call.
+        paraphrases: list of prompt paraphrases for SRI
+        adversarial_prompts: list of prompts for SVE
+        """
+        results = {}
+
+        # HSI
+        raw_output = self.clean_answer(prompt, self.llm_func(prompt))
+        results['HSI'] = self.hallucination_severity_index(prompt, raw_output, save_json=save_json, return_type=return_type)
+
+        # CSS
+        results['CSS'] = self.consistency_stability_score(prompt, runs=runs, save_json=save_json, return_type=return_type)
+
+        # SRI
+        if paraphrases:
+            results['SRI'] = self.semantic_robustness_index(prompt, paraphrases, save_json=save_json, return_type=return_type)
+
+        # SVE
+        if adversarial_prompts:
+            results['SVE'] = self.safety_vulnerability_exposure(adversarial_prompts, save_json=save_json, return_type=return_type)
+
+        # KBC
+        results['KBC'] = self.knowledge_base_coverage([prompt], save_json=save_json, return_type=return_type)
+
+        return results
+
+    # -----------------------------
+    # Code-Specific Evaluation Metrics (Delegated to CodeEvaluator)
+    # -----------------------------
+    
+    def code_syntax_validity(self, code_response, language="python", save_json=False, return_type="dict"):
+        """
+        Check if generated code is syntactically valid.
+        Supports: python, javascript, java, cpp, go, rust, ruby, php, typescript
+        """
+        return self.code_evaluator.code_syntax_validity(code_response, language, save_json, return_type)
+    
+    def code_execution_test(self, code_response, test_cases, language="python", 
+                           timeout=5, save_json=False, return_type="dict"):
+        """
+        Execute code with test cases and verify outputs.
+        test_cases: list of dicts with 'input' and 'expected_output'
+        Supports: python, javascript, java, cpp, c, go, ruby, php
+        """
+        return self.code_evaluator.code_execution_test(code_response, test_cases, language, timeout, save_json, return_type)
+    
+    def code_quality_metrics(self, code_response, language="python", 
+                            save_json=False, return_type="dict"):
+        """
+        Analyze code quality metrics: complexity, documentation, structure.
+        Supports: python, javascript, java, cpp, c, go, ruby, php, rust, typescript
+        """
+        return self.code_evaluator.code_quality_metrics(code_response, language, save_json, return_type)
+    
+    def code_security_scan(self, code_response, language="python", 
+                          save_json=False, return_type="dict"):
+        """
+        Scan code for common security vulnerabilities and anti-patterns.
+        Supports: python, javascript, java, cpp, c, go, ruby, php, rust, typescript
+        """
+        return self.code_evaluator.code_security_scan(code_response, language, save_json, return_type)
+    
+    def code_semantic_correctness(self, prompt, code_response, reference_code, 
+                                  save_json=False, return_type="dict"):
+        """
+        Evaluate semantic similarity between generated and reference code.
+        """
+        return self.code_evaluator.code_semantic_correctness(prompt, code_response, reference_code, save_json, return_type)
+    
+    def comprehensive_code_evaluation(self, prompt, code_response, reference_code=None,
+                                     test_cases=None, language="python", 
+                                     save_json=False, return_type="dict"):
+        """
+        Run all code evaluation metrics in one comprehensive test.
+        """
+        return self.code_evaluator.comprehensive_code_evaluation(prompt, code_response, reference_code, test_cases, language, save_json, return_type)

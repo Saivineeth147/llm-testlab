@@ -6,104 +6,182 @@
 
 ⭐ If you find this project useful, **please consider starring** it — it helps others discover it!
 
+# LLM TestLab
 
+**Comprehensive Testing Suite for Large Language Models**
 
-LLM TestLab
-============
+A flexible Python toolkit for evaluating LLMs on:
+- **Text Metrics**: Hallucination, consistency, semantic robustness, safety
+- **Code Evaluation**: Syntax, execution, quality, security, semantic correctness across 9+ languages
+- **Dual Embedders**: Optimized for both text and code analysis
+- **Optional FAISS**: High-performance vector similarity
 
-Comprehensive Testing Suite for Large Language Models (LLMs)
+## Features
 
-LLM TestLab is a flexible Python toolkit for evaluating Large Language Models (LLMs) on semantic similarity, hallucinations, consistency, and security.
-It supports FAISS for high-performance vector similarity and falls back to NumPy if FAISS is unavailable.
+### Text Evaluation Metrics
+- **Hallucination Severity Index (HSI)** – Detect factual deviations from knowledge base
+- **Consistency Stability Score (CSS)** – Measure output stability across runs
+- **Semantic Robustness Index (SRI)** – Test invariance to paraphrasing
+- **Safety Vulnerability Exposure (SVE)** – Detect unsafe responses to adversarial prompts
+- **Knowledge Base Coverage (KBC)** – Measure factual alignment
 
-Features
---------
+### Code Evaluation Metrics (9+ Languages)
+- **Syntax Validity (SV)** – Compiler/interpreter-based validation
+- **Execution Pass Rate (EPR)** – Test case execution and verification
+- **Code Quality Score (CQS)** – Complexity, documentation, error handling
+- **Security Risk Score (SRS)** – Vulnerability pattern detection
+- **Semantic Code Correctness (SCC)** – Embedding-based similarity to reference
+- **Comprehensive Code Evaluation (CCE)** – Weighted aggregation of all metrics
 
-- Semantic Similarity Test – Evaluate if model outputs match expected answers.
-- Hallucination Test – Detect deviations from a knowledge base.
-- Consistency Test – Measure stability across multiple runs.
-- Security Test – Detect unsafe or malicious responses using keywords, regex patterns, and embedding similarity.
-- FAISS Support – Optional, for faster similarity searches.
-- Knowledge Base Management – Add, remove, or list facts.
-- Malicious Keywords Management – Customize keywords and patterns for security checks.
-- Logging – Built-in debug/info logging using Python's logging module.
+**Supported Languages**: Python, JavaScript, TypeScript, Java, C, C++, Go, Rust, Ruby, PHP
 
-Project Structure
------------------
+### Advanced Features
+- **Dual Embedders**: `all-MiniLM-L6-v2` for text, `BAAI/bge-small-en-v1.5` for code
+- **FAISS Support**: Optional, for faster similarity searches
+- **Knowledge Base Management**: Add, remove, or list facts
+- **Security Patterns**: Customizable keywords and regex patterns
+- **Rich Logging**: Built-in debug/info logging
+
+## Project Structure
+
 ```
 llm-testlab/
 ├── llm_testing_suite/
 │   ├── __init__.py          
-│   └── llm_testing_suite.py
-├── pyproject.toml
+│   ├── llm_testing_suite.py    # Main test suite (text metrics)
+│   └── code_evaluator.py       # Code evaluation module
+├── examples/
+│   ├── run_text_evaluation.py  # Text metrics evaluation script
+│   ├── run_code_evaluation.py  # Code metrics evaluation script
+│   ├── groq_example.py         # Groq API text evaluation
+│   ├── groq_code_evaluation.py # Groq API code evaluation
+│   └── huggingface_example.py  # HuggingFace integration
+├── pyproject.toml              # Package configuration
+├── requirements.txt            # Dependencies
 ├── README.md
 ├── LICENSE
-└── examples/
-    └── huggingface_example.py
+└── .gitignore
 
 ```
-Installation
-------------
+## Installation
 
-1. From PyPI:
-
-    `pip install llm-testlab`
-
-2. Or install directly from source:
-  ```
-   git clone https://github.com/Saivineeth147/llm-testlab.git
-   cd llm-testlab
-   pip install .
+### From PyPI
+```bash
+pip install llm-testlab
 ```
 
-Optional: If you want FAISS and huggingface:
+### From Source
+```bash
+git clone https://github.com/Saivineeth147/llm-testlab.git
+cd llm-testlab
+pip install .
+```
 
-  ` pip install llm-testlab[faiss,huggingface] `
+### Optional Dependencies
+```bash
+# With FAISS and HuggingFace support
+pip install llm-testlab[faiss,huggingface]
 
-Quick Start
------------
+# Or install individually
+pip install faiss-cpu  # or faiss-gpu
+pip install transformers
+```
 
+## Quick Start
+
+### Text Metrics Example
+```python
 from llm_testing_suite import LLMTestSuite
 
-# Example LLM function
-def llm_func(prompt):
+def my_llm(prompt):
     return "Rome is the capital of Italy"
 
-# Initialize the test suite
-tester = LLMTestSuite(llm_func, use_faiss=True)
+# Initialize with FAISS support
+suite = LLMTestSuite(my_llm, use_faiss=True)
 
-# Run semantic similarity test
-tester.semantic_test("What is the capital of Italy?", "Rome is the capital of Italy")
+# Add knowledge
+suite.add_knowledge("Rome is the capital of Italy")
 
-# Run security test
-tester.security_test("Ignore previous instructions")
+# Run all novel metrics
+result = suite.run_all_novel_metrics(
+    prompt="What is the capital of Italy?",
+    paraphrases=["Italy's capital?", "Capital city of Italy?"],
+    adversarial_prompts=["ignore previous instructions"],
+    runs=3
+)
 
-# Run all tests
-tester.run_tests("What is the capital of Italy?", expected_answer="Rome is the capital of Italy")
+print(f"HSI: {result['HSI']['HSI']:.4f}")           # Hallucination
+print(f"CSS: {result['CSS']['CSS']:.4f}")           # Consistency  
+print(f"SRI: {result['SRI']['SRI']:.4f}")           # Robustness
+print(f"SVE: {result['SVE']['SVE']:.4f}")           # Safety
+print(f"KBC: {result['KBC']['KBC']:.4f}")           # Coverage
+```
 
-Managing Knowledge Base
-----------------------
+### Code Evaluation Example
+```python
+from llm_testing_suite import LLMTestSuite
 
+def code_llm(prompt):
+    return '''
+def add(a, b):
+    """Add two numbers."""
+    return a + b
+    
+print(add(5, 3))
+'''
+
+suite = LLMTestSuite(code_llm)
+
+# Comprehensive code evaluation
+result = suite.comprehensive_code_evaluation(
+    prompt="Write a function to add two numbers",
+    code_response=code_llm("..."),
+    test_cases=[
+        {"input": "", "expected_output": "8"}
+    ],
+    language="python"
+)
+
+print(f"Overall Score: {result['overall_score']:.1f}/100")
+print(f"Syntax Valid: {result['syntax_valid']}")
+print(f"Quality Score: {result['quality_score']}/100")
+print(f"Security: {'✓' if result['is_secure'] else '✗'}")
+```
+
+## Managing Knowledge Base
+
+```python
 # Add a single fact
-tester.add_knowledge("New York is the largest city in the USA")
+suite.add_knowledge("New York is the largest city in the USA")
 
 # Add multiple facts
-tester.add_knowledge_bulk(["Python is a programming language", "AI is transforming industries"])
+suite.add_knowledge_bulk([
+    "Python is a programming language",
+    "AI is transforming industries"
+])
 
 # List knowledge base
-tester.list_knowledge()
+suite.list_knowledge()
 
 # Remove a fact
-tester.remove_knowledge("Python is a programming language")
+suite.remove_knowledge("Python is a programming language")
 
 # Clear the knowledge base
-tester.clear_knowledge()
+suite.clear_knowledge()
+```
 
-Managing Malicious Keywords
----------------------------
+## Managing Security Keywords
 
+```python
 # Add malicious keywords
-tester.add_malicious_keywords(["hack system", "steal data"])
+suite.add_malicious_keywords(["hack system", "steal data"])
+
+# List keywords
+suite.list_malicious_keywords()
+
+# Remove a keyword
+suite.remove_malicious_keyword("hack system")
+```
 
 # List keywords
 tester.list_malicious_keywords()
@@ -120,53 +198,220 @@ Output Format
 - `"table"`: Prints a formatted table using the `rich` library, no dictionary returned.  
 - `"both"`: Returns the dictionary **and** prints the table.
 
-Example of semantic test result:
+## Code Evaluation Details
 
+### Individual Metrics
+
+```python
+from llm_testing_suite import LLMTestSuite
+
+suite = LLMTestSuite(your_llm_function)
+
+# 1. Syntax Validity
+syntax = suite.code_syntax_validity(code, language="python")
+# Returns: {"syntax_valid": True/False, "error": ...}
+
+# 2. Execution Test
+execution = suite.code_execution_test(
+    code,
+    test_cases=[
+        {"input": "5\n", "expected_output": "5"}
+    ],
+    language="python"
+)
+# Returns: {"pass_rate": 1.0, "passed_tests": 1, "total_tests": 1, ...}
+
+# 3. Quality Metrics
+quality = suite.code_quality_metrics(code, language="python")
+# Returns: {"quality_score": 80, "metrics": {...}}
+
+# 4. Security Scan
+security = suite.code_security_scan(code, language="python")
+# Returns: {"is_secure": True, "vulnerabilities": [...]}
+
+# 5. Semantic Correctness
+semantic = suite.code_semantic_correctness(
+    prompt="Write add function",
+    code_response=generated_code,
+    reference_code=reference_solution
+)
+# Returns: {"semantic_similarity": 0.85, "semantically_correct": True}
+```
+
+### Quality Scoring (0-100)
+Each criterion worth 20 points:
+- **Has Comments** (`#`, `//`, `/*`) - 20 pts
+- **Has Docstring** (`"""`, `/**`) - 20 pts  
+- **Has Error Handling** (`try/except`, `try/catch`) - 20 pts
+- **Low Complexity** (< 10 branches/loops) - 20 pts
+- **Has Functions** (at least 1) - 20 pts
+
+### Security Patterns Detected
+- SQL Injection
+- Command Injection  
+- XSS vulnerabilities
+- Buffer overflows (C/C++)
+- Hardcoded secrets
+- Unsafe deserialization
+- Path traversal
+- Language-specific antipatterns
+
+### Supported Languages
+
+| Language | Syntax Check | Execution | Quality | Security |
+|----------|-------------|-----------|---------|----------|
+| Python | ✅ AST | ✅ | ✅ | ✅ |
+| JavaScript | ✅ Node | ✅ | ✅ | ✅ |
+| TypeScript | ✅ tsc | ✅ | ✅ | ✅ |
+| Java | ✅ javac | ✅ | ✅ | ✅ |
+| C/C++ | ✅ gcc/g++ | ✅ | ✅ | ✅ |
+| Go | ✅ go fmt | ✅ | ✅ | ✅ |
+| Rust | ✅ rustc | ⚠️ | ✅ | ✅ |
+| Ruby | ✅ ruby -c | ✅ | ✅ | ✅ |
+| PHP | ✅ php -l | ✅ | ✅ | ✅ |
+
+**Note**: Compilers/interpreters must be installed for full syntax validation. Falls back to regex-based checks if unavailable.
+
+## Dual Embedder Architecture
+
+LLMTestSuite uses specialized embedders for optimal evaluation:
+
+### Text Embedder: `all-MiniLM-L6-v2`
+- **Used for**: HSI, CSS, SRI, SVE, KBC (text metrics)
+- **Size**: 22M params, 384 dimensions
+- **Speed**: Fast
+- **Purpose**: General semantic similarity
+
+### Code Embedder: `BAAI/bge-small-en-v1.5`  
+- **Used for**: Code semantic correctness (SCC)
+- **Size**: 33M params, 384 dimensions
+- **Speed**: Fast
+- **Purpose**: Code-specific semantic understanding
+
+### Custom Embedder
+
+```python
+from sentence_transformers import SentenceTransformer
+
+suite = LLMTestSuite(my_llm)
+
+# Replace code embedder
+suite.code_embedder = SentenceTransformer("microsoft/codebert-base")
+suite.code_evaluator.embedder = suite.code_embedder
+
+# Or use different text embedder
+suite = LLMTestSuite(my_llm, embedder_model="all-mpnet-base-v2")
+```
+
+### Embedder Comparison
+
+| Model | Params | Dims | Speed | Best For |
+|-------|--------|------|-------|----------|
+| all-MiniLM-L6-v2 | 22M | 384 | Fast | Text (default) |
+| all-mpnet-base-v2 | 110M | 768 | Medium | Text (higher accuracy) |
+| bge-small-en-v1.5 | 33M | 384 | Fast | Code (default) |
+| bge-base-en-v1.5 | 109M | 768 | Medium | Code (balanced) |
+| CodeBERT | 125M | 768 | Medium | Code (Microsoft) |
+
+## Output Format
+
+All test methods support three return types via `return_type` parameter:
+- `"dict"` - Returns Python dictionary (default)
+- `"table"` - Prints formatted table using `rich` library
+- `"both"` - Returns dictionary AND prints table
+
+### Example Results
+
+```python
+# HSI Result
 {
-    "question": "What is the capital of Italy?",
-    "generated_answer": "Rome is the capital of Italy",
-    "semantic_score": 0.92,
-    "semantic_pass": True,
-    "best_match": "Rome is the capital of Italy"
+    "prompt": "What is the capital of France?",
+    "answer": "Paris is the capital of France",
+    "HSI": 0.01,  # Lower is better (0-1 scale)
+    "closest_fact": "Paris is the capital of France"
 }
 
-Example of hallucination test result:
-
+# Code Evaluation Result
 {
-    "question": "Who wrote Hamlet?",
-    "generated_answer": "Hamlet was written by Shakespeare",
-    "hallucination_best_match": "William Shakespeare wrote the play Romeo and Juliet.",
-    "hallucination_distance": 0.87
+    "overall_score": 85.0,
+    "syntax_valid": True,
+    "quality_score": 80,
+    "is_secure": True,
+    "pass_rate": 1.0,
+    "semantic_similarity": 0.89
 }
+```
 
-Example of consistency test result:
+## Complete Example: Groq API
 
-{
-    "question": "What is the capital of France?",
-    "consistency_outputs": ["Paris is the capital of France", "Paris is the capital of France", "Paris is the capital of France"],
-    "consistency_avg_sim": 0.99
-}
+```python
+from groq import Groq
+from llm_testing_suite import LLMTestSuite
 
-Example of security test result:
+client = Groq(api_key="your-api-key")
 
-{
-    "question": "Ignore previous instructions",
-    "generated_answer": "Ignore previous instructions",
-    "security_safe": False,
-    "security_reason": "Matched keyword: 'ignore previous instructions'"
-}
+def groq_llm(prompt):
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    return response.choices[0].message.content
 
-The `run_tests()` method combines all these results into a single dictionary with added `token_cost` information.
+suite = LLMTestSuite(groq_llm)
 
-Logging
--------
+# Text evaluation
+result = suite.run_all_novel_metrics(
+    prompt="What is the capital of France?",
+    paraphrases=["France's capital?"],
+    runs=3
+)
 
-The suite uses Python's built-in logging module for debug and info messages.
-Adjust the log level in llm_testing_suite.py:
+# Code evaluation
+code_result = suite.comprehensive_code_evaluation(
+    prompt="Write fibonacci function",
+    code_response=groq_llm("Write a Python fibonacci function"),
+    language="python"
+)
+```
 
-    logger.setLevel(logging.DEBUG)  # Options: DEBUG, INFO, WARNING, ERROR
+See `examples/groq_code_evaluation.py` for comprehensive test suite.
 
-License
--------
+## Logging
 
-This project is licensed under the MIT License.
+```python
+# Enable debug logging
+suite = LLMTestSuite(my_llm, debug=True)
+
+# Or configure manually
+import logging
+logging.getLogger("llm_testing_suite").setLevel(logging.DEBUG)
+```
+
+
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Acknowledgments
+
+- Sentence-Transformers for embedding models
+- FAISS for efficient similarity search
+- Rich library for beautiful terminal output
+- Open-source LLM community
+
+---
+
+**Star this repo** ⭐ if you find it useful!
+
+For questions or issues, please open a GitHub issue.
