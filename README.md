@@ -1,3 +1,13 @@
+---
+title: LLM TestLab Playground
+emoji: 🧪
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+license: mit
+app_port: 7860
+---
 <p align="center">
   <a href="https://github.com/Saivineeth147/llm-testlab/stargazers">
     <img src="https://img.shields.io/github/stars/Saivineeth147/llm-testlab?style=social" alt="Star this repo" />
