@@ -4,16 +4,11 @@
 services:
   - type: web
     name: llm-playground
-    runtime: python
+    runtime: docker
     region: oregon
     plan: free
     rootDir: playground
-    buildCommand: |
-      cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt && pip install groq huggingface_hub
-    startCommand: python server.py
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.11"
       - key: PORT
         value: "8000"
     healthCheckPath: /api/health
