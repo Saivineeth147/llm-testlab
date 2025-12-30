@@ -70,7 +70,7 @@ const api = {
 // Metric Card Component
 // ═══════════════════════════════════════════════════════════════════════════
 
-function MetricCard({ label, value, description, isGood, icon: Icon }) {
+function MetricCard({ label, value, description, isGood, icon: Icon, range }) {
     const numValue = typeof value === 'number' ? value : parseFloat(value) || 0
     const displayValue = typeof value === 'boolean'
         ? (value ? '✓' : '✗')
@@ -82,21 +82,43 @@ function MetricCard({ label, value, description, isGood, icon: Icon }) {
         return numValue > 0.7 ? 'metric-good' : numValue > 0.4 ? 'metric-warning' : 'metric-bad'
     }
 
+    const getIndicator = () => {
+        if (typeof value === 'boolean') return null
+        if (isGood === 'lower') return { text: '↓ Lower is better', color: 'var(--success)' }
+        return { text: '↑ Higher is better', color: 'var(--success)' }
+    }
+
+    const indicator = getIndicator()
+
     return (
-        <div className={`metric - card ${getStatus()} `}>
+        <div className={`metric-card ${getStatus()}`}>
             {Icon && <div className="section-icon" style={{ marginBottom: '8px' }}><Icon size={24} /></div>}
             <div className="metric-label">{label}</div>
             <div className="metric-value">{displayValue}</div>
             <div className="progress-bar">
                 <div
                     className="progress-fill"
-                    style={{ width: `${Math.min(numValue * 100, 100)}% ` }}
+                    style={{ width: `${Math.min(numValue * 100, 100)}%` }}
                 />
             </div>
             <div className="metric-description">{description}</div>
+            {indicator && (
+                <div className="metric-indicator" style={{
+                    fontSize: '0.7rem',
+                    color: 'var(--text-muted)',
+                    marginTop: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                }}>
+                    <span style={{ color: indicator.color }}>{indicator.text}</span>
+                    {range && <span>• Range: {range}</span>}
+                </div>
+            )}
         </div>
     )
 }
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Text List Input Component (supports long text entries)
@@ -834,45 +856,50 @@ export default function App() {
                                         <MetricCard
                                             label="HSI"
                                             value={textResults.metrics.HSI.value}
-                                            description="Hallucination Severity"
+                                            description="Measures factual deviation from knowledge base"
                                             isGood="lower"
                                             icon={Brain}
+                                            range="0-1"
                                         />
                                     )}
                                     {textResults.metrics.CSS && (
                                         <MetricCard
                                             label="CSS"
                                             value={textResults.metrics.CSS.value}
-                                            description="Consistency Stability"
+                                            description="Output stability across multiple runs"
                                             isGood="higher"
                                             icon={RefreshCw}
+                                            range="0-1"
                                         />
                                     )}
                                     {textResults.metrics.SRI && (
                                         <MetricCard
                                             label="SRI"
                                             value={textResults.metrics.SRI.value}
-                                            description="Semantic Robustness"
+                                            description="Invariance to input paraphrasing"
                                             isGood="higher"
                                             icon={Target}
+                                            range="0-1"
                                         />
                                     )}
                                     {textResults.metrics.SVE && (
                                         <MetricCard
                                             label="SVE"
                                             value={textResults.metrics.SVE.value}
-                                            description="Safety Vulnerability"
+                                            description="Rate of unsafe/harmful responses"
                                             isGood="lower"
                                             icon={Shield}
+                                            range="0-1"
                                         />
                                     )}
                                     {textResults.metrics.KBC && (
                                         <MetricCard
                                             label="KBC"
                                             value={textResults.metrics.KBC.value}
-                                            description="Knowledge Coverage"
+                                            description="Alignment with knowledge base facts"
                                             isGood="higher"
                                             icon={Database}
+                                            range="0-1"
                                         />
                                     )}
                                 </div>
@@ -1035,9 +1062,10 @@ export default function App() {
                                     <MetricCard
                                         label="Overall Score"
                                         value={codeResults.metrics.overall_score / 100}
-                                        description={`${codeResults.metrics.overall_score}/100`}
+                                        description="Combined score of all code quality metrics"
                                         isGood="higher"
                                         icon={Sparkles}
+                                        range="0-100"
                                     />
                                     <MetricCard
                                         label="Syntax"
@@ -1048,9 +1076,10 @@ export default function App() {
                                     <MetricCard
                                         label="Quality"
                                         value={codeResults.metrics.quality_score / 100}
-                                        description={`${codeResults.metrics.quality_score}/100`}
+                                        description="Code structure, readability & best practices"
                                         isGood="higher"
                                         icon={Target}
+                                        range="0-100"
                                     />
                                     <MetricCard
                                         label="Security"
@@ -1063,9 +1092,10 @@ export default function App() {
                                             <MetricCard
                                                 label="Semantic Match"
                                                 value={codeResults.metrics.semantic_similarity}
-                                                description="Similarity to reference"
+                                                description="Code similarity to reference solution"
                                                 isGood="higher"
                                                 icon={Brain}
+                                                range="0-1"
                                             />
                                         )
                                     }
