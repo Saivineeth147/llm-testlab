@@ -28,7 +28,6 @@ var/
 
 # Paper and examples
 paper/
-*.json
 
 # Test result files (generated during evaluation runs)
 code_eval_output.txt
