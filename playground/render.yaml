@@ -7,9 +7,10 @@ services:
     runtime: python
     region: oregon
     plan: free
+    rootDir: playground
     buildCommand: |
-      cd playground/frontend && npm install && npm run build && cd .. && pip install -r requirements.txt && pip install -e ..
-    startCommand: cd playground && python server.py
+      cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt && pip install groq huggingface_hub
+    startCommand: python server.py
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
