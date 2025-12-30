@@ -4,7 +4,8 @@ import remarkGfm from 'remark-gfm'
 import './markdown.css'
 import {
     Beaker, Settings, Key, Zap, Code, FileText, Play, Plus, X, Menu,
-    ChevronDown, AlertCircle, CheckCircle, Search, Shield, Brain, Database, Sparkles, Languages, Terminal, Target
+    ChevronDown, AlertCircle, CheckCircle, Search, Shield, Brain, Database, Sparkles, Languages, Terminal, Target,
+    Loader2, Download, RefreshCw
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════
