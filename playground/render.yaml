@@ -1,0 +1,18 @@
+# Render Blueprint for LLM Playground
+# Deploy with: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: llm-playground
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      cd playground/frontend && npm install && npm run build && cd .. && pip install -r requirements.txt && pip install -e ..
+    startCommand: cd playground && python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: PORT
+        value: "8000"
+    healthCheckPath: /api/health
