@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import './markdown.css'
 import {
     Beaker, Settings, Key, Zap, Code, FileText, Play, Plus, X, Menu,
-    ChevronDown, AlertCircle, CheckCircle, Loader2, Download,
-    Brain, Shield, RefreshCw, Target, Database, Sparkles
+    ChevronDown, AlertCircle, CheckCircle, Search, Shield, Brain, Database, Sparkles, Languages, Terminal, Target
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -80,14 +82,14 @@ function MetricCard({ label, value, description, isGood, icon: Icon }) {
     }
 
     return (
-        <div className={`metric-card ${getStatus()}`}>
+        <div className={`metric - card ${getStatus()} `}>
             {Icon && <div className="section-icon" style={{ marginBottom: '8px' }}><Icon size={24} /></div>}
             <div className="metric-label">{label}</div>
             <div className="metric-value">{displayValue}</div>
             <div className="progress-bar">
                 <div
                     className="progress-fill"
-                    style={{ width: `${Math.min(numValue * 100, 100)}%` }}
+                    style={{ width: `${Math.min(numValue * 100, 100)}% ` }}
                 />
             </div>
             <div className="metric-description">{description}</div>
@@ -435,7 +437,7 @@ export default function App() {
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `llm-evaluation-${mode}-${Date.now()}.json`
+        a.download = `llm - evaluation - ${mode} -${Date.now()}.json`
         a.click()
     }
 
@@ -456,14 +458,14 @@ export default function App() {
 
             {/* Sidebar Overlay */}
             <div
-                className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
+                className={`sidebar - overlay ${sidebarOpen ? 'visible' : ''} `}
                 onClick={() => setSidebarOpen(false)}
             />
 
             {/* ═══════════════════════════════════════════════════════════════════════
           Sidebar
           ═══════════════════════════════════════════════════════════════════════ */}
-            <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+            <aside className={`sidebar ${sidebarOpen ? 'open' : ''} `}>
                 {/* Close button for mobile */}
                 <button
                     className="menu-toggle"
@@ -703,14 +705,14 @@ export default function App() {
                 {/* Mode Tabs */}
                 <div className="tabs">
                     <button
-                        className={`tab ${mode === 'text' ? 'active' : ''}`}
+                        className={`tab ${mode === 'text' ? 'active' : ''} `}
                         onClick={() => setMode('text')}
                     >
                         <FileText size={18} />
                         <span className="tab-label">Text</span>
                     </button>
                     <button
-                        className={`tab ${mode === 'code' ? 'active' : ''}`}
+                        className={`tab ${mode === 'code' ? 'active' : ''} `}
                         onClick={() => setMode('code')}
                     >
                         <Code size={18} />
@@ -879,7 +881,11 @@ export default function App() {
                                     <div className="results-panel" style={{ marginTop: 24 }}>
                                         <div className="result-item">
                                             <div className="result-label">Model Response</div>
-                                            <div className="result-value">{textResults.metrics.HSI.answer}</div>
+                                            <div className="result-value markdown-content">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                    {textResults.metrics.HSI.answer}
+                                                </ReactMarkdown>
+                                            </div>
                                         </div>
                                         {textResults.metrics.HSI.closest_fact && (
                                             <div className="result-item">
@@ -1051,125 +1057,135 @@ export default function App() {
                                         description={codeResults.metrics.is_secure ? 'Secure' : 'Issues Found'}
                                         icon={Shield}
                                     />
-                                    {codeResults.metrics.semantic_similarity !== null && (
-                                        <MetricCard
-                                            label="Semantic Match"
-                                            value={codeResults.metrics.semantic_similarity}
-                                            description="Similarity to reference"
-                                            isGood="higher"
-                                            icon={Brain}
-                                        />
-                                    )}
-                                </div>
+                                    {
+                                        codeResults.metrics.semantic_similarity !== null && (
+                                            <MetricCard
+                                                label="Semantic Match"
+                                                value={codeResults.metrics.semantic_similarity}
+                                                description="Similarity to reference"
+                                                isGood="higher"
+                                                icon={Brain}
+                                            />
+                                        )
+                                    }
+                                </div >
 
                                 {/* Quality Breakdown */}
-                                {codeResults.metrics.quality_metrics && (
-                                    <div className="results-panel" style={{ marginTop: 16 }}>
-                                        <div className="result-label" style={{ marginBottom: 8 }}>Quality Breakdown</div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
-                                            <div className="result-item" style={{ padding: 8 }}>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Lines of Code</span>
-                                                <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.lines_of_code || 0}</div>
-                                            </div>
-                                            <div className="result-item" style={{ padding: 8 }}>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Functions</span>
-                                                <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.num_functions || 0}</div>
-                                            </div>
-                                            <div className="result-item" style={{ padding: 8 }}>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Classes</span>
-                                                <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.num_classes || 0}</div>
-                                            </div>
-                                            <div className="result-item" style={{ padding: 8 }}>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Complexity</span>
-                                                <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.cyclomatic_complexity || 0}</div>
-                                            </div>
-                                            <div className="result-item" style={{ padding: 8 }}>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Has Comments</span>
-                                                <div style={{ fontWeight: 600, color: codeResults.metrics.quality_metrics.has_comments ? 'var(--success)' : 'var(--text-muted)' }}>
-                                                    {codeResults.metrics.quality_metrics.has_comments ? '✓ Yes' : '✗ No'}
+                                {
+                                    codeResults.metrics.quality_metrics && (
+                                        <div className="results-panel" style={{ marginTop: 16 }}>
+                                            <div className="result-label" style={{ marginBottom: 8 }}>Quality Breakdown</div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+                                                <div className="result-item" style={{ padding: 8 }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Lines of Code</span>
+                                                    <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.lines_of_code || 0}</div>
                                                 </div>
-                                            </div>
-                                            <div className="result-item" style={{ padding: 8 }}>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Has Docstring</span>
-                                                <div style={{ fontWeight: 600, color: codeResults.metrics.quality_metrics.has_docstring ? 'var(--success)' : 'var(--text-muted)' }}>
-                                                    {codeResults.metrics.quality_metrics.has_docstring ? '✓ Yes' : '✗ No'}
+                                                <div className="result-item" style={{ padding: 8 }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Functions</span>
+                                                    <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.num_functions || 0}</div>
                                                 </div>
-                                            </div>
-                                            <div className="result-item" style={{ padding: 8 }}>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Error Handling</span>
-                                                <div style={{ fontWeight: 600, color: codeResults.metrics.quality_metrics.has_error_handling ? 'var(--success)' : 'var(--text-muted)' }}>
-                                                    {codeResults.metrics.quality_metrics.has_error_handling ? '✓ Yes' : '✗ No'}
+                                                <div className="result-item" style={{ padding: 8 }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Classes</span>
+                                                    <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.num_classes || 0}</div>
+                                                </div>
+                                                <div className="result-item" style={{ padding: 8 }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Complexity</span>
+                                                    <div style={{ fontWeight: 600 }}>{codeResults.metrics.quality_metrics.cyclomatic_complexity || 0}</div>
+                                                </div>
+                                                <div className="result-item" style={{ padding: 8 }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Has Comments</span>
+                                                    <div style={{ fontWeight: 600, color: codeResults.metrics.quality_metrics.has_comments ? 'var(--success)' : 'var(--text-muted)' }}>
+                                                        {codeResults.metrics.quality_metrics.has_comments ? '✓ Yes' : '✗ No'}
+                                                    </div>
+                                                </div>
+                                                <div className="result-item" style={{ padding: 8 }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Has Docstring</span>
+                                                    <div style={{ fontWeight: 600, color: codeResults.metrics.quality_metrics.has_docstring ? 'var(--success)' : 'var(--text-muted)' }}>
+                                                        {codeResults.metrics.quality_metrics.has_docstring ? '✓ Yes' : '✗ No'}
+                                                    </div>
+                                                </div>
+                                                <div className="result-item" style={{ padding: 8 }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Error Handling</span>
+                                                    <div style={{ fontWeight: 600, color: codeResults.metrics.quality_metrics.has_error_handling ? 'var(--success)' : 'var(--text-muted)' }}>
+                                                        {codeResults.metrics.quality_metrics.has_error_handling ? '✓ Yes' : '✗ No'}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )
+                                }
 
                                 {/* Syntax Error Display */}
-                                {codeResults.metrics.syntax_error && (
-                                    <div className="alert alert-error" style={{ marginTop: 16 }}>
-                                        <AlertCircle size={20} />
-                                        <div>
-                                            <strong>Syntax Error:</strong>
-                                            <pre style={{ marginTop: 4, fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>
-                                                {codeResults.metrics.syntax_error}
-                                            </pre>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Generated Code */}
-                                {codeResults.code && (
-                                    <div className="results-panel" style={{ marginTop: 24 }}>
-                                        <div className="result-label" style={{ marginBottom: 12 }}>
-                                            Generated Code
-                                            {codeResults.raw_response && (
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginLeft: 8 }}>
-                                                    (extracted from markdown)
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="code-editor">
-                                            <div className="code-header">
-                                                <div className="code-dots">
-                                                    <div className="code-dot red"></div>
-                                                    <div className="code-dot yellow"></div>
-                                                    <div className="code-dot green"></div>
-                                                </div>
-                                            </div>
-                                            <div className="code-content">
-                                                <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                                                    {codeResults.code}
+                                {
+                                    codeResults.metrics.syntax_error && (
+                                        <div className="alert alert-error" style={{ marginTop: 16 }}>
+                                            <AlertCircle size={20} />
+                                            <div>
+                                                <strong>Syntax Error:</strong>
+                                                <pre style={{ marginTop: 4, fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>
+                                                    {codeResults.metrics.syntax_error}
                                                 </pre>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )
+                                }
+
+                                {/* Generated Code */}
+                                {
+                                    codeResults.code && (
+                                        <div className="results-panel" style={{ marginTop: 24 }}>
+                                            <div className="result-label" style={{ marginBottom: 12 }}>
+                                                Generated Code
+                                                {codeResults.raw_response && (
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginLeft: 8 }}>
+                                                        (extracted from markdown)
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="code-editor">
+                                                <div className="code-header">
+                                                    <div className="code-dots">
+                                                        <div className="code-dot red"></div>
+                                                        <div className="code-dot yellow"></div>
+                                                        <div className="code-dot green"></div>
+                                                    </div>
+                                                </div>
+                                                <div className="code-content">
+                                                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                                                        {codeResults.code}
+                                                    </pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                }
 
                                 {/* Vulnerabilities */}
-                                {codeResults.metrics.vulnerabilities?.length > 0 && (
-                                    <div className="alert alert-error" style={{ marginTop: 16 }}>
-                                        <AlertCircle size={20} />
-                                        <div>
-                                            <strong>Security Issues Found ({codeResults.metrics.vulnerabilities.length}):</strong>
-                                            <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-                                                {codeResults.metrics.vulnerabilities.map((v, i) => (
-                                                    <li key={i} style={{ marginBottom: 4 }}>
-                                                        <strong style={{ color: v.severity === 'HIGH' ? 'var(--error)' : 'var(--warning)' }}>
-                                                            [{v.severity}]
-                                                        </strong> {v.type}
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                {
+                                    codeResults.metrics.vulnerabilities?.length > 0 && (
+                                        <div className="alert alert-error" style={{ marginTop: 16 }}>
+                                            <AlertCircle size={20} />
+                                            <div>
+                                                <strong>Security Issues Found ({codeResults.metrics.vulnerabilities.length}):</strong>
+                                                <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+                                                    {codeResults.metrics.vulnerabilities.map((v, i) => (
+                                                        <li key={i} style={{ marginBottom: 4 }}>
+                                                            <strong style={{ color: v.severity === 'HIGH' ? 'var(--error)' : 'var(--warning)' }}>
+                                                                [{v.severity}]
+                                                            </strong> {v.type}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </section>
+                                    )
+                                }
+                            </section >
                         )}
                     </>
                 )}
-            </main>
-        </div>
+            </main >
+        </div >
     )
 }
 
